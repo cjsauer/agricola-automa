@@ -1,0 +1,16 @@
+{:source-paths
+ ["src/dev"
+  "src/main"
+  "src/test"]
+
+ :dev-http {8000 "public"}
+
+ :dependencies
+ [[rum "0.12.3"]
+  [medley "1.3.0"]]
+
+ :builds
+ {:app {:target :browser
+        :output-dir "public/assets/js"
+        :asset-path "/assets/js"
+        :modules {:main {:init-fn agricola-automa.web/start!}}}}}
