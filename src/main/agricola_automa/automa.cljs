@@ -17,6 +17,10 @@
    :stage 0
    :skip-message "Automa is already starting player"})
 
+(def major-improvement
+  {:space "Major Improvement"
+   :stage 1})
+
 (def skippable-spaces
   #{meeting-place})
 
@@ -46,8 +50,6 @@
      :stage 1}
     {:space "Grain Utilization"
      :stage 1}
-    {:space "Major Improvement"
-     :stage 1}
     {:space "Basic Wish for Children"
      :stage 2}
     {:space "House Redevelopment"
@@ -68,7 +70,8 @@
      :stage 5}
     {:space "Farm Redevelopment"
      :stage 6}]
-   meeting-place))
+   meeting-place
+   major-improvement))
 
 (def automa-plans
   [{:stage 1
@@ -138,6 +141,18 @@
    {:stage 6
     :actions [5 1 1 1 2]}])
 
+(def major-improvements
+  [{:name "Fireplace (2 clay)"}
+   {:name "Fireplace (3 clay)"}
+   {:name "Cooking Hearth (4 clay)"}
+   {:name "Cooking Hearth (5 clay)"}
+   {:name "Well"}
+   {:name "Clay Oven"}
+   {:name "Stone Oven"}
+   {:name "Joinery"}
+   {:name "Pottery"}
+   {:name "Basketmaker's Workshop"}])
+
 (defn shuffle-stage-decks
   [cards stage-range]
   (mapv
@@ -158,6 +173,10 @@
   [deck]
   [(first deck)
    (subvec deck 1)])
+
+(defn shuffle-major-improvements
+  []
+  (shuffle major-improvements))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -251,10 +270,6 @@
 (defn top-action
   [automa]
   (-> automa :action-stack first))
-
-(defn desired-action-space
-  [automa]
-  (:space (top-action automa)))
 
 (defn all-turns-completed?
   [automa]

@@ -9,10 +9,11 @@
 (defn new-game
   [num-automas]
   (let [automas (vec (repeatedly num-automas automa/make-automa))]
-    {:round          1
-     :automas        (reduce #(assoc %1 (:uuid %2) %2) {} automas)
-     :blocked-spaces #{}
-     :log            '()}))
+    {:round              1
+     :automas            (reduce #(assoc %1 (:uuid %2) %2) {} automas)
+     :major-improvements (automa/shuffle-major-improvements)
+     :blocked-spaces     #{}
+     :log                '()}))
 
 (defn draw-all-automa-plan-cards
   [game]
@@ -57,6 +58,10 @@
      (drop-while #(known-blocked? (automa/top-action %))
                  retry-cycle))))
 
+(defn pop-major-improvements
+  [game]
+  (update game :major-improvements rest))
+
 (defn pickup-worker
   [game automa-uuid]
   (let [automa-path    [:automas automa-uuid]
@@ -70,13 +75,19 @@
   (let [automa-path  [:automas automa-uuid]
         automa       (get-in game automa-path)
         action       (automa/top-action automa)
-        final-automa (automa/confirm-worker-placement automa)]
+        final-automa (automa/confirm-worker-placement automa)
+        next-maj-imp (first (:major-improvements game))
+        maj-imp?     (= action automa/major-improvement)
+        cond-pop-imp (if maj-imp? pop-major-improvements identity)
+        log-entry    (cond-> {:automa automa
+                              :action action
+                              :time   (js/Date.)}
+                       maj-imp? (assoc :major-improvement next-maj-imp))]
     (-> game
+        cond-pop-imp
         (assoc-in automa-path final-automa)
         (update :blocked-spaces conj action)
-        (update :log conj {:automa automa
-                           :action action
-                           :time (js/Date.)}))))
+        (update :log conj log-entry))))
 
 (defn block-worker-placement
   [game automa-uuid]

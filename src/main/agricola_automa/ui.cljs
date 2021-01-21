@@ -34,6 +34,10 @@
   [automa-uuid]
   (swap! game-state game/skip-worker-action automa-uuid))
 
+(defn pop-major-improvements!
+  []
+  (swap! game-state game/pop-major-improvements))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Interface components
@@ -47,19 +51,19 @@
   [uuid]
   [:button
    {:on-click #(pickup-worker! uuid)}
-   "Pickup worker"])
+   "Pick up worker"])
 
 (defn ui-confirm-worker-button
   [uuid]
   [:button
    {:on-click #(confirm-worker! uuid)}
-   "Confirm worker"])
+   "Confirm placement"])
 
 (defn ui-block-worker-button
   [uuid]
   [:button
    {:on-click #(block-worker! uuid)}
-   "Block worker"])
+   "Blocked / Not available"])
 
 (defn ui-skip-action-button
   [automa]
@@ -81,15 +85,24 @@
           (when (automa/skippable-spaces (first action-stack))
             (ui-skip-action-button automa))])])))
 
+(defn ui-major-improvement-button
+  [game]
+  (let [next-maj-imp (-> game :major-improvements first :name)]
+    [:button
+     {:on-click pop-major-improvements!}
+     (str next-maj-imp " (click if already purchased)")]))
+
 (defn ui-automa
-  [automa]
+  [game automa]
   (let [{:keys [uuid plan]} automa]
     [:div
      {:key uuid}
      [:h3 (str "Automa: " uuid)]
      [:p (str "Workers: " (automa/workers-remaining automa))]
-     (when-let [desire (automa/desired-action-space automa)]
-       [:p (str "Desired space: " desire)])
+     (when-let [desire (automa/top-action automa)]
+       [:p (str "Desired space: " (:space desire))
+        (when (= desire automa/major-improvement)
+          (ui-major-improvement-button game))])
      (when plan
        (ui-automa-controls automa))]))
 
@@ -108,14 +121,16 @@
 (defn ui-log
   [log]
   [:ul
-   (for [{:keys [time automa action]} log]
+   (for [{:keys [time automa action major-improvement]} log]
      (let [time-str (.toLocaleTimeString time)]
        [:li {:key time-str}
         (str time-str
              "\t"
              (:uuid automa)
              " took "
-             (:space action))]))])
+             (:space action)
+             (when major-improvement
+               (str ": " (:name major-improvement))))]))])
 
 (rum/defc ui-game < rum/reactive
   []
@@ -125,5 +140,5 @@
      (ui-current-round round)
      (ui-round-controls game)
      (for [[_ automa] automas]
-       (ui-automa automa))
+       (ui-automa game automa))
      (ui-log log)]))
