@@ -1,0 +1,22 @@
+{
+  "name": "agricola-automa",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "react-dom": "^17.0.1",
+    "react": "^17.0.1"
+  },
+  "devDependencies": {
+    "shadow-cljs": "^2.11.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cjsauer/agricola-automa.git"
+  },
+  "author": "Calvin Sauer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cjsauer/agricola-automa/issues"
+  },
+  "homepage": "https://github.com/cjsauer/agricola-automa#readme"
+}
