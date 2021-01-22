@@ -1,19 +1,40 @@
 (ns agricola-automa.game
   (:require [agricola-automa.automa :as automa]
-            [medley.core :refer [map-kv-vals]]))
+            [medley.core :refer [map-kv-vals]]
+            [clojure.set :as cset]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Game state
 
+(def player-colors
+  #{"red"
+    "blue"
+    "yellow"
+    "purple"})
+
 (defn new-game
   [num-automas]
-  (let [automas (vec (repeatedly num-automas automa/make-automa))]
+  (let [rand-colors (shuffle player-colors)
+        automas     (vec
+                     (map (fn [automa color]
+                            (assoc automa :color color))
+                          (repeatedly num-automas automa/make-automa)
+                          rand-colors))]
     {:round              1
      :automas            (reduce #(assoc %1 (:uuid %2) %2) {} automas)
      :major-improvements (automa/shuffle-major-improvements)
      :blocked-spaces     #{}
      :log                '()}))
+
+(defn cycle-automa-color
+  [game automa-uuid]
+  (let [automas        (vals (:automas game))
+        curr-colors    (set (map :color automas))
+        missing-colors (cset/difference player-colors curr-colors)
+        rand-colors    (shuffle missing-colors)
+        new-color      (first rand-colors)]
+    (assoc-in game [:automas automa-uuid :color] new-color)))
 
 (defn draw-all-automa-plan-cards
   [game]
@@ -36,9 +57,12 @@
 
 (defn end-round
   [game]
-  (-> game
-      (clear-all-automa-plans)
-      (assoc :blocked-spaces #{})))
+  (let [blocked-spaces (if (empty? (:major-improvements game))
+                         #{automa/major-improvement}
+                         #{})]
+    (-> game
+        (clear-all-automa-plans)
+        (assoc :blocked-spaces blocked-spaces))))
 
 (defn round-over?
   [game]
@@ -90,19 +114,19 @@
         (update :log conj log-entry))))
 
 (defn block-worker-placement
-  [game automa-uuid]
-  (let [automa-path  [:automas automa-uuid]
-        automa       (get-in game automa-path)
-        action       (automa/top-action automa)
-        new-game     (update game :blocked-spaces conj action)
-        final-automa (iterate-block-worker-placement new-game automa)]
-    (assoc-in new-game automa-path final-automa)))
+  ([game automa-uuid]
+   (block-worker-placement game automa-uuid true))
+  ([game automa-uuid persist-blocked?]
+   (let [automa-path  [:automas automa-uuid]
+         automa       (get-in game automa-path)
+         action       (automa/top-action automa)
+         temp-game    (update game :blocked-spaces conj action)
+         final-automa (iterate-block-worker-placement temp-game automa)
+         final-game   (if persist-blocked?
+                        temp-game
+                        game)]
+     (assoc-in final-game automa-path final-automa))))
 
 (defn skip-worker-action
   [game automa-uuid]
-  (let [automa-path  [:automas automa-uuid]
-        stage        (automa/round->stage (:round game))
-        automa       (-> (get-in game automa-path)
-                         (automa/draw-action-card stage))
-        final-automa (iterate-block-worker-placement game automa)]
-    (assoc-in game automa-path final-automa)))
+  (block-worker-placement game automa-uuid false))

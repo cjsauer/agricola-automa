@@ -15,7 +15,7 @@
 (def meeting-place
   {:space "Meeting Place"
    :stage 0
-   :skip-message "Automa is already starting player"})
+   :skip-message "Skip (already starting player)"})
 
 (def major-improvement
   {:space "Major Improvement"
@@ -172,7 +172,7 @@
 (defn draw-card
   [deck]
   [(first deck)
-   (subvec deck 1)])
+   (or (subvec deck 1) [])])
 
 (defn shuffle-major-improvements
   []

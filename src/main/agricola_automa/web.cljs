@@ -4,5 +4,5 @@
 
 (defn ^:dev/after-load start!
   []
-  (rum/mount (ui/ui-game)
+  (rum/mount (ui/ui-app)
              (js/document.getElementById "app")))
